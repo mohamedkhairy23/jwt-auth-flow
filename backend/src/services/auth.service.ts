@@ -5,7 +5,6 @@ import UserModel from "../models/user.model";
 import VerificationCode from "../models/verificationCode.model";
 import appAssert from "../utils/AppAssert";
 import { oneYearFromNow } from "../utils/date";
-import jwt from "jsonwebtoken";
 import {
   RefreshTokenPayload,
   refreshTokenSignOptions,
@@ -42,8 +41,9 @@ export const createAccount = async (data: CreateAccountParams) => {
   // send verification email
 
   // create session
+  const userId = user._id;
   const session = await SessionModel.create({
-    userId: user._id,
+    userId,
     userAgent: data.userAgent,
   });
 
@@ -56,7 +56,7 @@ export const createAccount = async (data: CreateAccountParams) => {
 
   const accessToken = signToken({
     ...sessionInfo,
-    userId: user._id,
+    userId,
   });
 
   // return user and tokens
@@ -94,7 +94,7 @@ export const loginUser = async ({
 
   const accessToken = signToken({
     ...sessionInfo,
-    userId: user._id,
+    userId,
   });
 
   return { user: user.omitPassword(), accessToken, refreshToken };
