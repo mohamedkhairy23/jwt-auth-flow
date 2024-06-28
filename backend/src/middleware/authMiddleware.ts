@@ -17,7 +17,6 @@ declare global {
 export const isAuthenticated = catchErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     const token = req.cookies["accessToken"];
-    console.log(token);
 
     if (!token) {
       return next(
