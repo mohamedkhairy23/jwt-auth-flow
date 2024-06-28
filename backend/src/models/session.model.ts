@@ -24,6 +24,7 @@ const sessionSchema = new mongoose.Schema<SessionDocument>({
   },
   expiresAt: {
     type: Date,
+    required: true,
     default: thirtyDaysFromNow,
   },
 });
