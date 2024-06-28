@@ -1,4 +1,3 @@
-import { JWT_REFRESH_SECRET, JWT_SECRET } from "../constants/env";
 import { CONFLICT, UNAUTHORIZED } from "../constants/http";
 import VerificationCodeType from "../constants/verificationCodeTypes";
 import SessionModel from "../models/session.model";
@@ -7,6 +6,11 @@ import VerificationCode from "../models/verificationCode.model";
 import appAssert from "../utils/AppAssert";
 import { oneYearFromNow } from "../utils/date";
 import jwt from "jsonwebtoken";
+import {
+  RefreshTokenPayload,
+  refreshTokenSignOptions,
+  signToken,
+} from "../utils/jwt";
 
 export type CreateAccountParams = {
   email: string;
@@ -44,26 +48,16 @@ export const createAccount = async (data: CreateAccountParams) => {
   });
 
   // sign access token and refresh token
-  const refreshToken = jwt.sign(
-    { sessionId: session._id },
-    JWT_REFRESH_SECRET,
-    {
-      audience: ["user"],
-      expiresIn: "30d",
-    }
-  );
+  const sessionInfo: RefreshTokenPayload = {
+    sessionId: session._id,
+  };
 
-  const accessToken = jwt.sign(
-    {
-      userId: user._id,
-      sessionId: session._id,
-    },
-    JWT_SECRET,
-    {
-      audience: ["user"],
-      expiresIn: "15m",
-    }
-  );
+  const refreshToken = signToken(sessionInfo, refreshTokenSignOptions);
+
+  const accessToken = signToken({
+    ...sessionInfo,
+    userId: user._id,
+  });
 
   // return user and tokens
   return { user: user.omitPassword(), accessToken, refreshToken };
@@ -92,27 +86,16 @@ export const loginUser = async ({
     userAgent,
   });
 
-  const sessionInfo = {
+  const sessionInfo: RefreshTokenPayload = {
     sessionId: session._id,
   };
 
-  // sign access token and refresh token
-  const refreshToken = jwt.sign(sessionInfo, JWT_REFRESH_SECRET, {
-    audience: ["user"],
-    expiresIn: "30d",
-  });
+  const refreshToken = signToken(sessionInfo, refreshTokenSignOptions);
 
-  const accessToken = jwt.sign(
-    {
-      userId: user._id,
-      ...sessionInfo,
-    },
-    JWT_SECRET,
-    {
-      audience: ["user"],
-      expiresIn: "15m",
-    }
-  );
+  const accessToken = signToken({
+    ...sessionInfo,
+    userId: user._id,
+  });
 
   return { user: user.omitPassword(), accessToken, refreshToken };
 };
