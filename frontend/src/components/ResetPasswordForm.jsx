@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { resetPassword } from "../lib/api";
 
+/* eslint-disable react/prop-types */ // TODO: upgrade to latest eslint tooling
 const ResetPasswordForm = ({ code }) => {
   const [password, setPassword] = useState("");
   const {
