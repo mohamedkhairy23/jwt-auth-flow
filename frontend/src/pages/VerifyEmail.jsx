@@ -42,8 +42,8 @@ const VerifyEmail = () => {
                 </ChakraLink>
               </Text>
             )}
-            <ChakraLink as={Link} to="/" replace>
-              Back to home
+            <ChakraLink as={Link} to="/login" replace>
+              Go to login
             </ChakraLink>
           </VStack>
         )}

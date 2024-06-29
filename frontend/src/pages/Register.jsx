@@ -33,7 +33,7 @@ const Register = () => {
       setEmail("");
       setConfirmPassword("");
       setPassword("");
-      toast.success("Check your email t verify your account!");
+      toast.success("Check your email to verify your account!");
     },
   });
 
