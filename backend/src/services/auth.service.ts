@@ -31,6 +31,7 @@ import {
   getPasswordResetTemplate,
 } from "../utils/emailTemplates";
 import { date } from "zod";
+import { hashValue } from "../utils/bcrypt";
 
 export type CreateAccountParams = {
   email: string;
@@ -239,4 +240,44 @@ export const sendPasswrdResetEmail = async (email: string) => {
     console.log("SendPasswordResetError:", error.message);
     return {};
   }
+};
+
+type ResetPasswordParams = {
+  password: string;
+  verificationCode: string;
+};
+
+export const resetPassword = async ({
+  password,
+  verificationCode,
+}: ResetPasswordParams) => {
+  // get the verification code
+  const validCode = await VerificationCodeModel.findOne({
+    _id: verificationCode,
+    type: VerificationCodeType.PasswordReset,
+    expiresAt: { $gt: new Date() },
+  });
+
+  appAssert(validCode, NOT_FOUND, "Invalid or expired verification code");
+
+  // update the user password
+  const updatedUser = await UserModel.findByIdAndUpdate(
+    validCode.userId,
+    {
+      password: await hashValue(password),
+    },
+    { new: true }
+  );
+
+  appAssert(updatedUser, INTERNAL_SERVER_ERROR, "Failed to reset password");
+
+  // delete the verification code
+  await validCode.deleteOne();
+
+  // delete all the sessions for the updated user
+  await SessionModel.deleteMany({ userId: updatedUser._id });
+
+  return {
+    user: updatedUser.omitPassword,
+  };
 };
