@@ -6,8 +6,9 @@ import { APP_ORIGIN } from "./constants/env";
 import cookieParser from "cookie-parser";
 import errorHandler from "./middleware/errorHandler";
 import catchErrors from "./utils/catchErrors";
-import { HttpStatusCode, OK } from "./constants/http";
+import { OK } from "./constants/http";
 import authRoutes from "./routes/auth.route";
+import userRoutes from "./routes/user.route";
 import { isAuthenticated } from "./middleware/authMiddleware";
 
 const app = express();
@@ -23,14 +24,6 @@ app.use(
 app.use(cookieParser());
 
 app.get(
-  "/test",
-  isAuthenticated,
-  catchErrors(async (req: Request, res: Response, next: NextFunction) => {
-    return res.status(OK).send({ message: "Test!!!" });
-  })
-);
-
-app.get(
   "/health",
   catchErrors(async (req: Request, res: Response, next: NextFunction) => {
     return res.status(OK).send({ message: "health OK!" });
@@ -38,6 +31,7 @@ app.get(
 );
 
 app.use("/auth", authRoutes);
+app.use("/user", isAuthenticated, userRoutes);
 
 app.use(errorHandler);
 

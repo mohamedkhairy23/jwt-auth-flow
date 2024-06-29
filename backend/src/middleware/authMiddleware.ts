@@ -5,28 +5,33 @@ import catchErrors from "../utils/catchErrors";
 import { JWT_SECRET } from "../constants/env";
 import AppError from "../utils/AppError";
 import { UNAUTHORIZED } from "../constants/http";
+import AppErrorCode from "../constants/appErrorCode";
+import appAssert from "../utils/AppAssert";
 
 declare global {
   namespace Express {
     interface Request {
       userId: string;
+      sessionId: string;
     }
   }
 }
 
 export const isAuthenticated = catchErrors(
   async (req: Request, res: Response, next: NextFunction) => {
-    const token = req.cookies["accessToken"];
+    const accessToken = req.cookies["accessToken"];
 
-    if (!token) {
-      return next(
-        new AppError(UNAUTHORIZED, "Please login to access this resource")
-      );
-    }
+    appAssert(
+      accessToken,
+      UNAUTHORIZED,
+      "Not authorized",
+      AppErrorCode.InvalidAccessToken
+    );
 
     try {
-      const decoded = jwt.verify(token, JWT_SECRET as string);
+      const decoded = jwt.verify(accessToken, JWT_SECRET as string);
       req.userId = (decoded as JwtPayload).userId;
+      req.sessionId = (decoded as JwtPayload).sessionId;
       next();
     } catch (error: any) {
       return next(new AppError(UNAUTHORIZED, "Unauthorized"));
