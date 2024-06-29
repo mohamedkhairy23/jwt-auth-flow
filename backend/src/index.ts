@@ -9,6 +9,7 @@ import catchErrors from "./utils/catchErrors";
 import { OK } from "./constants/http";
 import authRoutes from "./routes/auth.route";
 import userRoutes from "./routes/user.route";
+import sessionRoutes from "./routes/session.route";
 import { isAuthenticated } from "./middleware/authMiddleware";
 
 const app = express();
@@ -32,6 +33,7 @@ app.get(
 
 app.use("/auth", authRoutes);
 app.use("/user", isAuthenticated, userRoutes);
+app.use("/sessions", isAuthenticated, sessionRoutes);
 
 app.use(errorHandler);
 
