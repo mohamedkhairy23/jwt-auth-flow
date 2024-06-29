@@ -13,12 +13,11 @@ import {
 } from "@chakra-ui/react";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { register } from "../lib/api";
 import { toast } from "sonner";
 
 const Register = () => {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -31,7 +30,9 @@ const Register = () => {
   } = useMutation({
     mutationFn: register,
     onSuccess: () => {
-      navigate("/", { replace: true });
+      setEmail("");
+      setConfirmPassword("");
+      setPassword("");
       toast.success("Check your email t verify your account!");
     },
   });

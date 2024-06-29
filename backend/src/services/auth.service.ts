@@ -265,6 +265,7 @@ export const resetPassword = async ({
     validCode.userId,
     {
       password: await hashValue(password),
+      verified: true,
     },
     { new: true }
   );
