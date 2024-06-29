@@ -2,6 +2,8 @@ import API from "../config/apiClient";
 
 export const login = async (data) => API.post("/auth/login", data);
 
+export const logout = async () => API.get("/auth/logout");
+
 export const register = async (data) => API.post("/auth/register", data);
 
 export const verifyEmail = async (verificationCode) =>
@@ -12,3 +14,5 @@ export const sendPasswordResetEmail = async (email) =>
 
 export const resetPassword = async ({ verificationCode, password }) =>
   API.post("/auth/password/reset", { verificationCode, password });
+
+export const getUser = async () => API.get("/user");
