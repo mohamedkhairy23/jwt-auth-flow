@@ -51,7 +51,10 @@ export const registerHandler = catchErrors(
 );
 
 export const loginHandler = catchErrors(async (req, res) => {
-  const request = loginSchema.parse({ ...req.body });
+  const request = loginSchema.parse({
+    ...req.body,
+    userAgent: req.headers["user-agent"],
+  });
 
   const { accessToken, refreshToken } = await loginUser(request);
 
