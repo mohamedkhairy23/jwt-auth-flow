@@ -4,6 +4,7 @@ import {
   createAccount,
   loginUser,
   refreshUserAccessToken,
+  sendPasswrdResetEmail,
   verifyEmail,
 } from "../services/auth.service";
 import { CREATED, OK, UNAUTHORIZED } from "../constants/http";
@@ -14,6 +15,7 @@ import {
   setAuthCookies,
 } from "../utils/cookies";
 import {
+  emailSchema,
   loginSchema,
   registerSchema,
   verificationCodeSchema,
@@ -29,13 +31,20 @@ export const registerHandler = catchErrors(
       userAgent: req.headers["user-agent"],
     });
 
+    //   // call service
+    //   const { user, accessToken, refreshToken } = await createAccount(request);
+
+    //   // return response
+    //   return setAuthCookies({ res, accessToken, refreshToken })
+    //     .status(CREATED)
+    //     .json(user);
+    // }
+
     // call service
-    const { user, accessToken, refreshToken } = await createAccount(request);
+    const { user } = await createAccount(request);
 
     // return response
-    return setAuthCookies({ res, accessToken, refreshToken })
-      .status(CREATED)
-      .json(user);
+    return res.status(CREATED).json(user);
   }
 );
 
@@ -90,4 +99,12 @@ export const verifyEmailHandler = catchErrors(async (req, res) => {
   await verifyEmail(verificationCode);
 
   return res.status(OK).json({ message: "Email verified successfully" });
+});
+
+export const sendPasswordHandler = catchErrors(async (req, res) => {
+  const email = emailSchema.parse(req.body.email);
+
+  await sendPasswrdResetEmail(email);
+
+  return res.status(OK).json({ message: "Password reset email sent" });
 });

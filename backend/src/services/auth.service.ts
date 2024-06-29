@@ -3,6 +3,7 @@ import {
   CONFLICT,
   INTERNAL_SERVER_ERROR,
   NOT_FOUND,
+  TOO_MANY_REQUESTS,
   UNAUTHORIZED,
 } from "../constants/http";
 import VerificationCodeType from "../constants/verificationCodeTypes";
@@ -11,7 +12,13 @@ import UserModel from "../models/user.model";
 import VerificationCodeModel from "../models/verificationCode.model";
 import VerificationCode from "../models/verificationCode.model";
 import appAssert from "../utils/AppAssert";
-import { ONE_DAY_MS, oneYearFromNow, thirtyDaysFromNow } from "../utils/date";
+import {
+  ONE_DAY_MS,
+  fiveMinutesAgo,
+  oneHourFromNow,
+  oneYearFromNow,
+  thirtyDaysFromNow,
+} from "../utils/date";
 import {
   RefreshTokenPayload,
   refreshTokenSignOptions,
@@ -19,7 +26,11 @@ import {
   verifyToken,
 } from "../utils/jwt";
 import sendMail from "../utils/sendMail";
-import { getVerifyEmailTemplate } from "../utils/emailTemplates";
+import {
+  getVerifyEmailTemplate,
+  getPasswordResetTemplate,
+} from "../utils/emailTemplates";
+import { date } from "zod";
 
 export type CreateAccountParams = {
   email: string;
@@ -77,7 +88,8 @@ export const createAccount = async (data: CreateAccountParams) => {
   });
 
   // return user and tokens
-  return { user: user.omitPassword(), accessToken, refreshToken };
+  // return { user: user.omitPassword(), accessToken, refreshToken };
+  return { user: user.omitPassword() };
 };
 
 export type LoginParams = {
@@ -93,6 +105,12 @@ export const loginUser = async ({
 }: LoginParams) => {
   const user = await UserModel.findOne({ email });
   appAssert(user, UNAUTHORIZED, "Invalid email or password");
+
+  appAssert(
+    user.verified,
+    UNAUTHORIZED,
+    `User with this email not confirmed yet, check your email to activate this email`
+  );
 
   const isValid = await user.comparePassword(password);
   appAssert(isValid, UNAUTHORIZED, "Invalid email or password");
@@ -177,4 +195,48 @@ export const verifyEmail = async (code: string) => {
   return {
     user: updatedUser.omitPassword(),
   };
+};
+
+export const sendPasswrdResetEmail = async (email: string) => {
+  try {
+    const user = await UserModel.findOne({ email });
+    appAssert(user, NOT_FOUND, "User not found");
+
+    const fiveMinAgo = fiveMinutesAgo();
+    const count = await VerificationCodeModel.countDocuments({
+      userId: user._id,
+      type: VerificationCodeType.PasswordReset,
+      createdAt: { $gt: fiveMinAgo },
+    });
+
+    appAssert(
+      count <= 1,
+      TOO_MANY_REQUESTS,
+      "You can only request a password reset 1 time within 5 minutes"
+    );
+
+    const expiresAt = oneHourFromNow();
+    const verificationCode = await VerificationCodeModel.create({
+      userId: user._id,
+      type: VerificationCodeType.PasswordReset,
+      expiresAt,
+    });
+
+    const url = `${APP_ORIGIN}/password/reset?code=${
+      verificationCode._id
+    }&exp=${expiresAt.getTime()}`;
+
+    await sendMail({
+      to: email,
+      ...getPasswordResetTemplate(url),
+    });
+
+    return {
+      url,
+      email: user.email,
+    };
+  } catch (error: any) {
+    console.log("SendPasswordResetError:", error.message);
+    return {};
+  }
 };
